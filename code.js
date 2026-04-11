@@ -1,4 +1,4 @@
-// Version 0.2
+// Version 1.0.0
 // Author: Ape42
 
 this.host_el    = null;
