@@ -55,6 +55,8 @@ tmpl.scripts[0].params.code_js   = codeJs;
 tmpl.scripts[0].params.code_css  = codeCss;
 tmpl.scripts[0].params.code_html = codeHtml;
 tmpl.scripts[0].params.last_edit = Date.now();
+tmpl.scripts[0].params.creator   = tmpl.scripts[0].params.creator.toLowerCase();
+tmpl.scripts[0].params.package   = tmpl.scripts[0].params.package.toLowerCase();
 
 const jsonContent = JSON.stringify(tmpl, null, '\t');
 fs.writeFileSync(jsonPath, jsonContent, 'utf8');
