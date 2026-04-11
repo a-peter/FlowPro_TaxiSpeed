@@ -13,7 +13,7 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6.0.2
 
       - name: Extract version from tag
         id: version
@@ -29,7 +29,7 @@ jobs:
               "p42-util-flow-ape42_3060-taxispeed/"
 
       - name: Create GitHub Release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v2.6.1
         with:
           name: "TaxiSpeed ${{ steps.version.outputs.VERSION }}"
           generate_release_notes: true
