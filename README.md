@@ -37,6 +37,8 @@ All thresholds can be adjusted in the Flow Pro settings panel without editing co
 3. Extract the zip into your MSFS **Community** folder.
 4. Start the sim, open Flow Pro — the widget appears in the Community section of the editor.
 
+> **MSFS 2024:** The folder name must additionally be registered in Flow Pro. Refer to the official Flow Pro documentation for details.
+
 ### Community folder locations
 
 | Version | Path |
