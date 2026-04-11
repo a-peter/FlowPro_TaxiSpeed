@@ -1,0 +1,24 @@
+{
+	"app_version": "2025.51.4.22",
+	"scripts": [
+		{
+			"code": "javascript",
+			"name": "Taxi Speed",
+			"short": "mdi:car-speed-limiter",
+			"uid": "a28ab066-7c0e-4f1b-ba55-40342ae2691b",
+			"params": {
+				"code_js": "",
+				"code_css": "",
+				"code_html": "",
+				"last_edit": 1774720449019,
+				"search_prefix": [],
+				"can_otto": false,
+				"description": "This widget shows the taxi speed when on ground. It uses an adjustable color scheme.",
+				"aircraft": null,
+				"tags": "Misc.",
+				"creator": "Ape42_3060",
+				"package": "p42-util-flow-Ape42_3060-TaxiSpeed"
+			}
+		}
+	]
+}

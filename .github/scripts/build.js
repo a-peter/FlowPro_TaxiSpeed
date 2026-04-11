@@ -4,7 +4,7 @@
 const fs   = require('fs');
 const path = require('path');
 
-const PACKAGE_NAME = 'p42-util-flow-Ape42_3060-taxispeed';
+const PACKAGE_NAME = 'p42-util-flow-ape42_3060-taxispeed';
 const version      = process.argv[2] || '0.0.1';
 const OUT_DIR      = path.join('dist', PACKAGE_NAME);
 
