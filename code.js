@@ -51,6 +51,9 @@ settings_define({
         value: this.widgetStore.speedHideAt,
         changed: (value) => {
             this.widgetStore.speedHideAt = Math.max(1, parseInt(value) || 40);
+            if (this.widgetStore.speedShowAt > this.widgetStore.speedHideAt - 2) {
+                this.widgetStore.speedShowAt = Math.max(1, this.widgetStore.speedHideAt - 2);
+            }
             this.$api.datastore.export(this.widgetStore);
         }
     },
@@ -60,7 +63,8 @@ settings_define({
         description: 'Widget reappears when speed drops below this value (hysteresis lower threshold).',
         value: this.widgetStore.speedShowAt,
         changed: (value) => {
-            this.widgetStore.speedShowAt = Math.max(1, parseInt(value) || 38);
+            const parsed = Math.max(1, parseInt(value) || 38);
+            this.widgetStore.speedShowAt = Math.min(parsed, this.widgetStore.speedHideAt - 2);
             this.$api.datastore.export(this.widgetStore);
         }
     }
