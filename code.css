@@ -19,17 +19,17 @@
     content: '';
     position: absolute;
     inset: 0;
-    background-image: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='260' height='55'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/></filter><rect width='260' height='55' filter='url(%23n)'/></svg>");
+    background-image: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='260' height='55'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/><feComponentTransfer><feFuncR type='discrete' tableValues='0 0.4 0.8'/><feFuncG type='discrete' tableValues='0 0.4 0.8'/><feFuncB type='discrete' tableValues='0 0.4 0.8'/></feComponentTransfer></filter><rect width='260' height='55' filter='url(%23n)'/></svg>");
     mix-blend-mode: overlay;
-    opacity: 0.18;
+    opacity: 0.4;
     pointer-events: none;
 }
 
 #Ape42_taxispeed_display {
     position: relative; /* stays above ::after */
     color: #cccccc;
-    font-family: 'Bahnschrift', Arial, sans-serif;
-    font-size: 24px;
+    font-family: Consolas, monospace;
+    font-size: 26px;
     font-weight: bold;
     padding: 8px 20px;
 }
@@ -39,9 +39,9 @@
 }
 
 #Ape42_taxispeed.speed-warn #Ape42_taxispeed_display {
-    color: #ffcc00;
+    color: #ffe100;
 }
 
 #Ape42_taxispeed.speed-danger #Ape42_taxispeed_display {
-    color: #ff4444;
+    color: #ad0f0f;
 }

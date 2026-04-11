@@ -1,54 +1,130 @@
-// Version 0.1
+// Version 0.2
 // Author: Ape42
-
-const SPEED_WARN   = 20; // knots — yellow
-const SPEED_DANGER = 30; // knots — red
 
 this.host_el    = null;
 this.display_el = null;
 
 this.widgetStore = {
-    manualHide: false
+    // Configurable thresholds (persisted)
+    speedWarn:   20,
+    speedDanger: 30,
+    speedHideAt: 40,
+    speedShowAt: 38,
+    // Widget position (persisted)
+    posX: null,
+    posY: null,
+    // Runtime state (not persisted)
+    manualHide: false,
+    speedHide:  false,
+    speed:      0,
+    onGround:   false,
 };
+this.$api.datastore.import(this.widgetStore);
+this.widgetStore.manualHide = false; // always start visible
+this.widgetStore.speedHide  = false;
+
+settings_define({
+    speedWarn: {
+        label: 'Warning speed (kts)',
+        type: 'text',
+        description: 'Speed at which the display turns yellow.',
+        value: this.widgetStore.speedWarn,
+        changed: (value) => {
+            this.widgetStore.speedWarn = Math.max(1, parseInt(value) || 20);
+            this.$api.datastore.export(this.widgetStore);
+        }
+    },
+    speedDanger: {
+        label: 'Danger speed (kts)',
+        type: 'text',
+        description: 'Speed at which the display turns red.',
+        value: this.widgetStore.speedDanger,
+        changed: (value) => {
+            this.widgetStore.speedDanger = Math.max(1, parseInt(value) || 30);
+            this.$api.datastore.export(this.widgetStore);
+        }
+    },
+    speedHideAt: {
+        label: 'Hide above (kts)',
+        type: 'text',
+        description: 'Widget hides when speed exceeds this value (hysteresis upper threshold).',
+        value: this.widgetStore.speedHideAt,
+        changed: (value) => {
+            this.widgetStore.speedHideAt = Math.max(1, parseInt(value) || 40);
+            this.$api.datastore.export(this.widgetStore);
+        }
+    },
+    speedShowAt: {
+        label: 'Show again below (kts)',
+        type: 'text',
+        description: 'Widget reappears when speed drops below this value (hysteresis lower threshold).',
+        value: this.widgetStore.speedShowAt,
+        changed: (value) => {
+            this.widgetStore.speedShowAt = Math.max(1, parseInt(value) || 38);
+            this.$api.datastore.export(this.widgetStore);
+        }
+    }
+});
 
 run(() => {
     this.widgetStore.manualHide = !this.widgetStore.manualHide;
 });
 
-style(() => {
+loop_15hz(() => {
     const onGround = this.$api.variables.get('A:SIM ON GROUND', 'bool');
     const speed    = this.$api.variables.get('A:GROUND VELOCITY', 'knots');
 
-    if (this.host_el) {
-        // Overlay: show when on ground and not manually hidden
-        const show = onGround && !this.widgetStore.manualHide;
-        this.host_el.classList.toggle('visible', show);
+    this.widgetStore.onGround = onGround;
+    this.widgetStore.speed    = speed;
 
-        // Update speed text
-        if (this.display_el) {
-            this.display_el.textContent = `Speed: ${speed.toFixed(1)} kts`;
-        }
+    if (!this.host_el) return;
 
-        // Speed colour
-        this.host_el.classList.remove('speed-ok', 'speed-warn', 'speed-danger');
-        if (speed >= SPEED_DANGER) {
-            this.host_el.classList.add('speed-danger');
-        } else if (speed >= SPEED_WARN) {
-            this.host_el.classList.add('speed-warn');
-        } else {
-            this.host_el.classList.add('speed-ok');
-        }
+    // Hysteresis
+    if (speed >= this.widgetStore.speedHideAt)       this.widgetStore.speedHide = true;
+    else if (speed < this.widgetStore.speedShowAt)   this.widgetStore.speedHide = false;
+
+    // Overlay visibility
+    const show = onGround && !this.widgetStore.manualHide && !this.widgetStore.speedHide;
+    this.host_el.classList.toggle('visible', show);
+
+    // Speed text
+    if (this.display_el) {
+        this.display_el.textContent = `Speed: ${speed.toFixed(1)} kts`;
     }
 
-    // Tile state
-    if (!onGround) return null;
-    if (speed >= SPEED_DANGER) return 'error';
-    if (speed >= SPEED_WARN)   return 'armed';
+    // Speed colour
+    this.host_el.classList.remove('speed-ok', 'speed-warn', 'speed-danger');
+    if (speed >= this.widgetStore.speedDanger)      this.host_el.classList.add('speed-danger');
+    else if (speed >= this.widgetStore.speedWarn)   this.host_el.classList.add('speed-warn');
+    else                                            this.host_el.classList.add('speed-ok');
+
+    // Persist position if changed after a drag
+    const posX = parseInt(this.host_el.style.left) || 0;
+    const posY = parseInt(this.host_el.style.top)  || 0;
+    if (posX !== this.widgetStore.posX || posY !== this.widgetStore.posY) {
+        this.widgetStore.posX = posX;
+        this.widgetStore.posY = posY;
+        this.$api.datastore.export(this.widgetStore);
+    }
+});
+
+style(() => {
+    const { onGround, speed, speedWarn, speedDanger } = this.widgetStore;
+    if (!onGround)           return null;
+    if (speed >= speedDanger) return 'error';
+    if (speed >= speedWarn)   return 'armed';
     return 'active';
 });
 
 html_created(el => {
     this.host_el    = el.querySelector('#Ape42_taxispeed');
     this.display_el = el.querySelector('#Ape42_taxispeed_display');
+
+    // Restore saved position
+    if (this.widgetStore.posX !== null) {
+        this.host_el.style.left = `${this.widgetStore.posX}px`;
+        this.host_el.style.top  = `${this.widgetStore.posY}px`;
+    }
+
     console.log('TaxiSpeed: HTML created');
 });
