@@ -1,4 +1,4 @@
-// Version 1.0.0
+// Version 1.1.0
 // Author: Ape42
 
 this.host_el    = null;
@@ -6,6 +6,7 @@ this.display_el = null;
 
 this.widgetStore = {
     // Configurable thresholds (persisted)
+    speedMinShow: -1,
     speedWarn:   20,
     speedDanger: 30,
     speedHideAt: 40,
@@ -24,6 +25,16 @@ this.widgetStore.manualHide = false; // always start visible
 this.widgetStore.speedHide  = false;
 
 settings_define({
+    speedMinShow: {
+        label: 'Minimum speed (kts)',
+        type: 'text',
+        description: 'Widget only appears when ground speed is at or above this value.',
+        value: this.widgetStore.speedMinShow,
+        changed: (value) => {
+            this.widgetStore.speedMinShow = Math.max(0, parseFloat(value) || -1);
+            this.$api.datastore.export(this.widgetStore);
+        }
+    },
     speedWarn: {
         label: 'Warning speed (kts)',
         type: 'text',
@@ -88,7 +99,7 @@ loop_15hz(() => {
     else if (speed < this.widgetStore.speedShowAt)   this.widgetStore.speedHide = false;
 
     // Overlay visibility
-    const show = onGround && !this.widgetStore.manualHide && !this.widgetStore.speedHide;
+    const show = onGround && !this.widgetStore.manualHide && !this.widgetStore.speedHide && speed >= this.widgetStore.speedMinShow;
     this.host_el.classList.toggle('visible', show);
 
     // Speed text
@@ -118,6 +129,10 @@ style(() => {
     if (speed >= speedDanger) return 'error';
     if (speed >= speedWarn)   return 'armed';
     return 'active';
+});
+
+info(() => {
+    return `Taxi Speed\n${this.widgetStore.speed.toFixed(1)} kts`;
 });
 
 html_created(el => {
