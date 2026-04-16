@@ -1,4 +1,4 @@
-// Version 1.1.0
+// Version 1.2.0
 // Author: Ape42
 
 this.host_el    = null;
@@ -79,6 +79,111 @@ settings_define({
             this.$api.datastore.export(this.widgetStore);
         }
     }
+});
+
+const search_prefixes = ['taxi', 'ts'];
+const SPEED_NEVER = 9999; // sentinel: condition never triggers
+const DEFAULTS = { speedMinShow: -1, speedWarn: 20, speedDanger: 30 };
+
+function fmtMinShow(v) { return v < 0    ? 'disabled' : v + ' kts'; }
+function fmtThresh(v)  { return v >= SPEED_NEVER ? 'disabled' : v + ' kts'; }
+
+search(search_prefixes, (query, callback) => {
+    if (!query) return;
+
+    const data = query.trim().toLowerCase().split(/\s+/);
+
+    // Only prefix typed → show overview
+    if (data.length < 2 || !data[1]) {
+        callback([{
+            uid: 'taxi_help',
+            label: 'Taxi Speed commands',
+            subtext: `<p>Current settings: minshow <b>${fmtMinShow(this.widgetStore.speedMinShow)}</b> | warn <b>${fmtThresh(this.widgetStore.speedWarn)}</b> | danger <b>${fmtThresh(this.widgetStore.speedDanger)}</b></p>`
+                   + `<p>Usage: taxi minshow &lt;kts&gt; | taxi warn &lt;kts&gt; | taxi danger &lt;kts&gt;</p>`
+                   + `<p>Use "-" for any value to disable that threshold.</p>`,
+            execute: null
+        }]);
+        return;
+    }
+
+    const cmd = data[1];
+    const arg = data[2];
+
+    // --- minshow ---
+    if (cmd === 'minshow') {
+        const result = { uid: 'taxi_minshow', label: 'TAXI minshow', subtext: '', execute: null };
+        if (!arg) {
+            result.subtext = `<p>Current: <b>${fmtMinShow(this.widgetStore.speedMinShow)}</b> | Default: <b>${fmtMinShow(DEFAULTS.speedMinShow)}</b></p><p>Enter a value in kts, or "-" to disable.</p>`;
+            callback([result]);
+            return;
+        }
+        const isDisable = arg === '-';
+        const parsed    = isDisable ? -1 : parseFloat(arg);
+        if (!isDisable && isNaN(parsed)) {
+            result.subtext = `<p>Invalid value: "${arg}". Enter a number in kts, or "-" to disable.</p>`;
+            callback([result]);
+            return;
+        }
+        const newVal = isDisable ? -1 : Math.max(0, parsed);
+        result.label   = `TAXI minshow → ${fmtMinShow(newVal)}`;
+        result.subtext = `<p>Set minimum show speed to <b>${fmtMinShow(newVal)}</b></p>`;
+        result.execute = () => { this.widgetStore.speedMinShow = newVal; this.$api.datastore.export(this.widgetStore); };
+        callback([result]);
+        return true;
+    }
+
+    // --- warn ---
+    if (cmd === 'warn') {
+        const result = { uid: 'taxi_warn', label: 'TAXI warn', subtext: '', execute: null };
+        if (!arg) {
+            result.subtext = `<p>Current: <b>${fmtThresh(this.widgetStore.speedWarn)}</b> | Default: <b>${fmtThresh(DEFAULTS.speedWarn)}</b></p><p>Enter a value in kts, or "-" to disable the warning colour.</p>`;
+            callback([result]);
+            return;
+        }
+        const isDisable = arg === '-';
+        const parsed    = isDisable ? SPEED_NEVER : parseInt(arg);
+        if (!isDisable && isNaN(parsed)) {
+            result.subtext = `<p>Invalid value: "${arg}". Enter a number in kts, or "-" to disable.</p>`;
+            callback([result]);
+            return;
+        }
+        const newVal = isDisable ? SPEED_NEVER : Math.max(1, parsed);
+        result.label   = `TAXI warn → ${fmtThresh(newVal)}`;
+        result.subtext = `<p>Set warning speed to <b>${fmtThresh(newVal)}</b></p>`;
+        result.execute = () => { this.widgetStore.speedWarn = newVal; this.$api.datastore.export(this.widgetStore); };
+        callback([result]);
+        return true;
+    }
+
+    // --- danger ---
+    if (cmd === 'danger') {
+        const result = { uid: 'taxi_danger', label: 'TAXI danger', subtext: '', execute: null };
+        if (!arg) {
+            result.subtext = `<p>Current: <b>${fmtThresh(this.widgetStore.speedDanger)}</b> | Default: <b>${fmtThresh(DEFAULTS.speedDanger)}</b></p><p>Enter a value in kts, or "-" to disable the danger colour.</p>`;
+            callback([result]);
+            return;
+        }
+        const isDisable = arg === '-';
+        const parsed    = isDisable ? SPEED_NEVER : parseInt(arg);
+        if (!isDisable && isNaN(parsed)) {
+            result.subtext = `<p>Invalid value: "${arg}". Enter a number in kts, or "-" to disable.</p>`;
+            callback([result]);
+            return;
+        }
+        const newVal = isDisable ? SPEED_NEVER : Math.max(1, parsed);
+        result.label   = `TAXI danger → ${fmtThresh(newVal)}`;
+        result.subtext = `<p>Set danger speed to <b>${fmtThresh(newVal)}</b></p>`;
+        result.execute = () => { this.widgetStore.speedDanger = newVal; this.$api.datastore.export(this.widgetStore); };
+        callback([result]);
+        return true;
+    }
+
+    callback([{
+        uid: 'taxi_help',
+        label: 'TAXI: unknown command',
+        subtext: `<p>Unknown command: "${cmd}"</p><p>Available: <b>minshow</b>, <b>warn</b>, <b>danger</b></p>`,
+        execute: null
+    }]);
 });
 
 run(() => {
