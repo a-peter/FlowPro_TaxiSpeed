@@ -4,11 +4,13 @@
 this.host_el    = null;
 this.display_el = null;
 
+const DEFAULTS = { speedMinShow: -1, speedWarn: 20, speedDanger: 30 };
+
 this.widgetStore = {
     // Configurable thresholds (persisted)
-    speedMinShow: -1,
-    speedWarn:   20,
-    speedDanger: 30,
+    speedMinShow: DEFAULTS.speedMinShow,
+    speedWarn:    DEFAULTS.speedWarn,
+    speedDanger:  DEFAULTS.speedDanger,
     speedHideAt: 40,
     speedShowAt: 38,
     // Widget position (persisted)
@@ -83,7 +85,6 @@ settings_define({
 
 const search_prefixes = ['taxi', 'ts'];
 const SPEED_NEVER = 9999; // sentinel: condition never triggers
-const DEFAULTS = { speedMinShow: -1, speedWarn: 20, speedDanger: 30 };
 
 function fmtMinShow(v) { return v < 0    ? 'disabled' : v + ' kts'; }
 function fmtThresh(v)  { return v >= SPEED_NEVER ? 'disabled' : v + ' kts'; }
