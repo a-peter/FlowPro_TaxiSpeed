@@ -92,18 +92,17 @@ function fmtThresh(v)  { return v >= SPEED_NEVER ? 'disabled' : v + ' kts'; }
 search(search_prefixes, (query, callback) => {
     if (!query) return;
 
+    const ws   = this.widgetStore;
     const data = query.trim().toLowerCase().split(/\s+/);
 
-    // Only prefix typed → show overview
+    // Only prefix typed → one entry per command with current value
     if (data.length < 2 || !data[1]) {
-        callback([{
-            uid: 'taxi_help',
-            label: 'Taxi Speed commands',
-            subtext: `<p>Current settings: minshow <b>${fmtMinShow(this.widgetStore.speedMinShow)}</b> | warn <b>${fmtThresh(this.widgetStore.speedWarn)}</b> | danger <b>${fmtThresh(this.widgetStore.speedDanger)}</b> | hide <b>${this.widgetStore.speedHideAt} / ${this.widgetStore.speedShowAt} kts</b></p>`
-                   + `<p>Usage: taxi minshow &lt;kts&gt; | taxi warn &lt;kts&gt; | taxi danger &lt;kts&gt; | taxi hide &lt;hideAt&gt; &lt;showAt&gt;</p>`
-                   + `<p>Use "-" for minshow/warn/danger to disable that threshold.</p>`,
-            execute: null
-        }]);
+        callback([
+            { uid: 'taxi_minshow', label: `TAXI minshow — ${fmtMinShow(ws.speedMinShow)}`,          subtext: `Minimum speed to show widget. Default: ${fmtMinShow(DEFAULTS.speedMinShow)}. Use "-" to disable.`,                              execute: null },
+            { uid: 'taxi_warn',    label: `TAXI warn — ${fmtThresh(ws.speedWarn)}`,                 subtext: `Warning colour threshold. Default: ${fmtThresh(DEFAULTS.speedWarn)}. Use "-" to disable.`,                                     execute: null },
+            { uid: 'taxi_danger',  label: `TAXI danger — ${fmtThresh(ws.speedDanger)}`,             subtext: `Danger colour threshold. Default: ${fmtThresh(DEFAULTS.speedDanger)}. Use "-" to disable.`,                                    execute: null },
+            { uid: 'taxi_hide',    label: `TAXI hide — ${ws.speedHideAt} / ${ws.speedShowAt} kts`,  subtext: `Hysteresis: hide above X, show again below Y. Default: ${DEFAULTS.speedHideAt} / ${DEFAULTS.speedShowAt} kts.`,               execute: null },
+        ]);
         return;
     }
 
@@ -114,21 +113,22 @@ search(search_prefixes, (query, callback) => {
     if (cmd === 'minshow') {
         const result = { uid: 'taxi_minshow', label: 'TAXI minshow', subtext: '', execute: null };
         if (!arg) {
-            result.subtext = `<p>Current: <b>${fmtMinShow(this.widgetStore.speedMinShow)}</b> | Default: <b>${fmtMinShow(DEFAULTS.speedMinShow)}</b></p><p>Enter a value in kts, or "-" to disable.</p>`;
+            result.label   = `TAXI minshow — current: ${fmtMinShow(ws.speedMinShow)} | default: ${fmtMinShow(DEFAULTS.speedMinShow)}`;
+            result.subtext = 'taxi minshow &lt;kts&gt;  —  use "-" to disable';
             callback([result]);
             return;
         }
         const isDisable = arg === '-';
         const parsed    = isDisable ? -1 : parseFloat(arg);
         if (!isDisable && isNaN(parsed)) {
-            result.subtext = `<p>Invalid value: "${arg}". Enter a number in kts, or "-" to disable.</p>`;
+            result.subtext = `Invalid value "${arg}". Enter a number in kts, or "-" to disable.`;
             callback([result]);
             return;
         }
         const newVal = isDisable ? -1 : Math.max(0, parsed);
         result.label   = `TAXI minshow → ${fmtMinShow(newVal)}`;
-        result.subtext = `<p>Set minimum show speed to <b>${fmtMinShow(newVal)}</b></p>`;
-        result.execute = () => { this.widgetStore.speedMinShow = newVal; this.$api.datastore.export(this.widgetStore); };
+        result.subtext = `Set minimum show speed to ${fmtMinShow(newVal)}`;
+        result.execute = () => { ws.speedMinShow = newVal; this.$api.datastore.export(ws); };
         callback([result]);
         return true;
     }
@@ -137,21 +137,22 @@ search(search_prefixes, (query, callback) => {
     if (cmd === 'warn') {
         const result = { uid: 'taxi_warn', label: 'TAXI warn', subtext: '', execute: null };
         if (!arg) {
-            result.subtext = `<p>Current: <b>${fmtThresh(this.widgetStore.speedWarn)}</b> | Default: <b>${fmtThresh(DEFAULTS.speedWarn)}</b></p><p>Enter a value in kts, or "-" to disable the warning colour.</p>`;
+            result.label   = `TAXI warn — current: ${fmtThresh(ws.speedWarn)} | default: ${fmtThresh(DEFAULTS.speedWarn)}`;
+            result.subtext = 'taxi warn &lt;kts&gt;  —  use "-" to disable warning colour';
             callback([result]);
             return;
         }
         const isDisable = arg === '-';
         const parsed    = isDisable ? SPEED_NEVER : parseInt(arg);
         if (!isDisable && isNaN(parsed)) {
-            result.subtext = `<p>Invalid value: "${arg}". Enter a number in kts, or "-" to disable.</p>`;
+            result.subtext = `Invalid value "${arg}". Enter a number in kts, or "-" to disable.`;
             callback([result]);
             return;
         }
         const newVal = isDisable ? SPEED_NEVER : Math.max(1, parsed);
         result.label   = `TAXI warn → ${fmtThresh(newVal)}`;
-        result.subtext = `<p>Set warning speed to <b>${fmtThresh(newVal)}</b></p>`;
-        result.execute = () => { this.widgetStore.speedWarn = newVal; this.$api.datastore.export(this.widgetStore); };
+        result.subtext = `Set warning speed to ${fmtThresh(newVal)}`;
+        result.execute = () => { ws.speedWarn = newVal; this.$api.datastore.export(ws); };
         callback([result]);
         return true;
     }
@@ -160,21 +161,22 @@ search(search_prefixes, (query, callback) => {
     if (cmd === 'danger') {
         const result = { uid: 'taxi_danger', label: 'TAXI danger', subtext: '', execute: null };
         if (!arg) {
-            result.subtext = `<p>Current: <b>${fmtThresh(this.widgetStore.speedDanger)}</b> | Default: <b>${fmtThresh(DEFAULTS.speedDanger)}</b></p><p>Enter a value in kts, or "-" to disable the danger colour.</p>`;
+            result.label   = `TAXI danger — current: ${fmtThresh(ws.speedDanger)} | default: ${fmtThresh(DEFAULTS.speedDanger)}`;
+            result.subtext = 'taxi danger &lt;kts&gt;  —  use "-" to disable danger colour';
             callback([result]);
             return;
         }
         const isDisable = arg === '-';
         const parsed    = isDisable ? SPEED_NEVER : parseInt(arg);
         if (!isDisable && isNaN(parsed)) {
-            result.subtext = `<p>Invalid value: "${arg}". Enter a number in kts, or "-" to disable.</p>`;
+            result.subtext = `Invalid value "${arg}". Enter a number in kts, or "-" to disable.`;
             callback([result]);
             return;
         }
         const newVal = isDisable ? SPEED_NEVER : Math.max(1, parsed);
         result.label   = `TAXI danger → ${fmtThresh(newVal)}`;
-        result.subtext = `<p>Set danger speed to <b>${fmtThresh(newVal)}</b></p>`;
-        result.execute = () => { this.widgetStore.speedDanger = newVal; this.$api.datastore.export(this.widgetStore); };
+        result.subtext = `Set danger speed to ${fmtThresh(newVal)}`;
+        result.execute = () => { ws.speedDanger = newVal; this.$api.datastore.export(ws); };
         callback([result]);
         return true;
     }
@@ -183,51 +185,50 @@ search(search_prefixes, (query, callback) => {
     if (cmd === 'hide') {
         const result = { uid: 'taxi_hide', label: 'TAXI hide', subtext: '', execute: null };
         if (!arg) {
-            result.subtext = `<p>Current: hide at <b>${this.widgetStore.speedHideAt} kts</b>, show again below <b>${this.widgetStore.speedShowAt} kts</b></p>`
-                           + `<p>Default: hide at <b>${DEFAULTS.speedHideAt} kts</b>, show again below <b>${DEFAULTS.speedShowAt} kts</b></p>`
-                           + `<p>Usage: taxi hide &lt;hideAt&gt; &lt;showAt&gt; — showAt must be at least 1 kt below hideAt.</p>`;
+            result.label   = `TAXI hide — current: ${ws.speedHideAt} / ${ws.speedShowAt} kts | default: ${DEFAULTS.speedHideAt} / ${DEFAULTS.speedShowAt} kts`;
+            result.subtext = 'taxi hide &lt;hideAt&gt; &lt;showAt&gt;  —  showAt must be at least 1 kt below hideAt';
             callback([result]);
             return;
         }
         const hideAt  = parseInt(arg);
         const showArg = data[3];
         if (isNaN(hideAt) || hideAt < 1) {
-            result.subtext = `<p>Invalid hideAt value: "${arg}". Enter a positive number in kts.</p>`;
+            result.subtext = `Invalid hideAt "${arg}". Enter a positive number in kts.`;
             callback([result]);
             return;
         }
         if (!showArg) {
             result.label   = `TAXI hide → ${hideAt} kts / ?`;
-            result.subtext = `<p>hideAt: <b>${hideAt} kts</b> — now enter the showAt value (must be &lt; ${hideAt} kts).</p>`;
+            result.subtext = `Now enter showAt (must be < ${hideAt} kts): taxi hide ${hideAt} &lt;showAt&gt;`;
             callback([result]);
             return;
         }
         const showAt = parseInt(showArg);
         if (isNaN(showAt) || showAt < 1) {
-            result.subtext = `<p>Invalid showAt value: "${showArg}". Enter a positive number in kts.</p>`;
+            result.subtext = `Invalid showAt "${showArg}". Enter a positive number in kts.`;
             callback([result]);
             return;
         }
         if (showAt >= hideAt) {
-            result.subtext = `<p>showAt (<b>${showAt} kts</b>) must be at least 1 kt below hideAt (<b>${hideAt} kts</b>).</p>`;
+            result.subtext = `showAt (${showAt} kts) must be at least 1 kt below hideAt (${hideAt} kts).`;
             callback([result]);
             return;
         }
         result.label   = `TAXI hide → ${hideAt} kts / show → ${showAt} kts`;
-        result.subtext = `<p>Hide widget above <b>${hideAt} kts</b>, show again below <b>${showAt} kts</b></p>`;
+        result.subtext = `Hide above ${hideAt} kts, show again below ${showAt} kts`;
         result.execute = () => {
-            this.widgetStore.speedHideAt = hideAt;
-            this.widgetStore.speedShowAt = showAt;
-            this.$api.datastore.export(this.widgetStore);
+            ws.speedHideAt = hideAt;
+            ws.speedShowAt = showAt;
+            this.$api.datastore.export(ws);
         };
         callback([result]);
         return true;
     }
 
     callback([{
-        uid: 'taxi_help',
-        label: 'TAXI: unknown command',
-        subtext: `<p>Unknown command: "${cmd}"</p><p>Available: <b>minshow</b>, <b>warn</b>, <b>danger</b>, <b>hide</b></p>`,
+        uid:     'taxi_unknown',
+        label:   `TAXI: unknown command "${cmd}"`,
+        subtext: 'Available: minshow, warn, danger, hide',
         execute: null
     }]);
 });
